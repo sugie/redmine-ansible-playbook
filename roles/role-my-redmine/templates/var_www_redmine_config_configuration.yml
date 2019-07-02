@@ -1,0 +1,9 @@
+production:
+  email_delivery:
+    delivery_method: :smtp
+    smtp_settings:
+      address: smtp.example.jp
+      port: 25
+      domain: redmine.example.jp
+      enable_starttls_auto: false
+

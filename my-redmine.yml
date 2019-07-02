@@ -1,0 +1,11 @@
+- hosts: my-redmine
+  become: yes
+  vars:
+    mysql_user: user
+    mysql_password: dulie0Va
+    mysql_database: db
+
+
+  roles:
+    - role-my-redmine
+

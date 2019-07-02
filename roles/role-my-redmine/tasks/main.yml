@@ -1,0 +1,81 @@
+#- name: Update apt
+#  become: true
+#  apt: update_cache=yes
+#
+#- name: upgrade apt
+#  become: true
+#  apt: update_cache=yes upgrade=full
+#
+- name: Install System Packages
+  become: yes
+  apt: pkg={{ item }} state=latest
+  with_items:
+    - ruby-dev
+    - ruby
+    - bundler
+    - gcc
+
+#    - python-mysqldb
+#    - curl
+#    - wget
+#    - net-tools
+#    - ruby-dev
+#    - ruby
+#    - bundler
+#    - apache2
+#    - libapache2-mod-passenger
+#    - imagemagick
+#    - libmagick++-dev
+#    - git
+#    - subversion
+#    - mysql-server
+#    - libmysqlclient-dev
+
+#- name: start mysql
+#####  service: name=mysql state=restarted enabled=yes
+
+- name: mysql conf
+  become: yes
+  template:
+    src=etc_mysql_conf.d_redmine.cnf
+    dest=/etc/mysql/conf.d/redmine.cnf
+
+- name: create mysql database
+  mysql_db: name={{ mysql_database }} state=present
+
+- name: create mysql user
+  mysql_user: name={{ mysql_user }} host={{ item }} password={{ mysql_password }} priv={{ mysql_database }}.*:ALL,GRANT state=present
+  with_items:
+    - localhost
+    - 192.168.0.%
+
+#- name: RedmineをSubVersionでダウンロード
+#  subversion:
+#    repo: http://svn.redmine.org/redmine/branches/3.2-stable
+#    dest: /var/www/redmine
+
+- name: Redmineの設定ファイルを作成
+  become: yes
+  template: src=var_www_redmine_config_database.yml dest=/var/www/redmine/config/database.yml 
+  template: src=var_www_redmine_config_configuration.yml dest=/var/www/redmine/config/configuration.yml 
+  template: src=var_www_redmine_config_initializers_utf8mb4.rb dest=/var/www/redmine/config/initializers/utf8mb4.rb 
+
+- name: chown
+  become: yes
+  file: path=/var/www/redmine owner=www-data group=www-data recurse=yes
+
+# https://docs.ansible.com/ansible/latest/modules/bundler_module.html
+# Installs gems from a Gemfile in the current directory
+#- bundler:
+#    state: present
+#    executable: ~/.rvm/gems/2.1.5/bin/bundle
+
+
+- name: 次に、シークレットトークンを作成して、テーブルを作成して、デフォルトのデータを読み込みましょう。
+  become: yes
+  shell: cd /var/www/redmine/ ; sudo -u www-data bundle install -j$(nproc) --without development test postgresql sqlite --path vendor/bundle
+  shell: cd /var/www/redmine/ ; sudo -u www-data bundle exec rake generate_secret_token
+  shell: cd /var/www/redmine/ ; sudo -u www-data RAILS_ENV=production bundle exec rake db:migrate
+  shell: cd /var/www/redmine/ ; sudo -u www-data RAILS_ENV=production REDMINE_LANG=ja bundle exec rake redmine:load_default_data
+
+

@@ -1,0 +1,3 @@
+[my-redmine]
+localhost ansible_connection=local
+

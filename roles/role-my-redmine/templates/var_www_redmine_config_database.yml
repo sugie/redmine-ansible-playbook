@@ -1,0 +1,9 @@
+production:
+  adapter: mysql2
+  host: localhost
+  database: db
+  username: user
+  password: {{ mysql_password }}
+  encoding: utf8mb4
+  socket: /var/run/mysqld/mysqld.sock
+
